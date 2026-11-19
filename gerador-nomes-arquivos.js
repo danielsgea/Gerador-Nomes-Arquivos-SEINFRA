@@ -341,7 +341,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Sessão e Seleção
   const sessionList = [];
-  const selectedExts = new Set();
+  const selectedExts = new Set(EXTENSOES.filter(item => item.default).map(item => item.ext));
 
   // =========================================================================
   // 3. INICIALIZAÇÃO DE DROPDOWNS E CHIPS
@@ -389,14 +389,17 @@ document.addEventListener('DOMContentLoaded', () => {
       chip.className = 'chip' + (extItem.default ? ' active' : '');
       chip.textContent = extItem.label;
       chip.dataset.ext = extItem.ext;
+      chip.setAttribute('aria-pressed', String(extItem.default));
 
       chip.addEventListener('click', () => {
         if (selectedExts.has(extItem.ext)) {
           selectedExts.delete(extItem.ext);
           chip.classList.remove('active');
+          chip.setAttribute('aria-pressed', 'false');
         } else {
           selectedExts.add(extItem.ext);
           chip.classList.add('active');
+          chip.setAttribute('aria-pressed', 'true');
         }
         atualizarInterfaceENomes();
       });
@@ -438,26 +441,6 @@ document.addEventListener('DOMContentLoaded', () => {
     return str.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
-  // Converte data do formato DD/MM/AAAA para AAAAMMDD (Regra 7 da Norma)
-  function converterDataParaNorma(valorData) {
-    if (!valorData) return '';
-    const limpo = valorData.replace(/\D/g, '');
-    if (limpo.length === 8) {
-      // Se digitado como DDMMAAAA:
-      const dia = limpo.slice(0, 2);
-      const mes = limpo.slice(2, 4);
-      const ano = limpo.slice(4);
-
-      // Se já foi digitado como AAAAMMDD:
-      const possivelAno = parseInt(limpo.slice(0, 4), 10);
-      if (possivelAno >= 1990 && possivelAno <= 2099) {
-        return limpo;
-      }
-      return `${ano}${mes}${dia}`;
-    }
-    return '';
-  }
-
   // Regra 7: Zeros à esquerda
   function zeroEsquerda(valor, casas = 3) {
     if (!valor) return '';
@@ -467,7 +450,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Regra 4: Assunto em minúsculas, 2 a 5 palavras, sem artigos e preposições
   function processarAssunto(texto) {
-    if (!texto) return { limpo: '', palavras: [], original: '' };
+    if (!texto) return { limpo: '', palavras: [], totalPalavras: 0 };
     const semAcento = removerAcentos(texto).toLowerCase();
     const semEspeciais = semAcento.replace(/[^a-z0-9\s-]/g, ' ');
     const tokens = semEspeciais.split(/[\s-]+/).filter(t => t.length > 0);
@@ -478,8 +461,7 @@ document.addEventListener('DOMContentLoaded', () => {
     return {
       limpo: truncadas.join('-'),
       palavras: truncadas,
-      totalPalavras: palavrasUteis.length,
-      original: texto
+      totalPalavras: palavrasUteis.length
     };
   }
 
@@ -523,9 +505,13 @@ document.addEventListener('DOMContentLoaded', () => {
     areaTemporaria.style.position = 'fixed';
     areaTemporaria.style.opacity = '0';
     document.body.appendChild(areaTemporaria);
-    areaTemporaria.select();
-    const copiou = document.execCommand('copy');
-    document.body.removeChild(areaTemporaria);
+    let copiou = false;
+    try {
+      areaTemporaria.select();
+      copiou = document.execCommand('copy');
+    } finally {
+      document.body.removeChild(areaTemporaria);
+    }
     if (!copiou) throw new Error('Não foi possível copiar o texto.');
   }
 
@@ -557,6 +543,11 @@ document.addEventListener('DOMContentLoaded', () => {
     return meta.padrao;
   }
 
+  function exigeDataDocumento(padrao, meta) {
+    return ['P1', 'P2', 'P3', 'P4', 'P5'].includes(padrao)
+      || (padrao === 'P6' && meta.seqTipo === 'data');
+  }
+
   function atualizarVisibilidadeCampos(padrao, meta) {
     // Badges do Padrão
     if (elBadge) elBadge.textContent = padrao;
@@ -572,7 +563,7 @@ document.addEventListener('DOMContentLoaded', () => {
     // Seção Identificação geral
     if (subIdent) subIdent.style.display = ['P1', 'P2', 'P3', 'P4', 'P5'].includes(padrao) ? 'block' : 'none';
     if (wArea) wArea.style.display = ['P1', 'P2', 'P3'].includes(padrao) ? 'block' : 'none';
-    if (wData) wData.style.display = ['P1', 'P2', 'P3', 'P4', 'P5', 'P6'].includes(padrao) ? 'block' : 'none';
+    if (wData) wData.style.display = exigeDataDocumento(padrao, meta) ? 'block' : 'none';
 
     if (wNum) wNum.style.display = ['P1', 'P2', 'P4', 'P5'].includes(padrao) ? 'block' : 'none';
     if (wOrgao) wOrgao.style.display = (padrao === 'P5') ? 'block' : 'none';
@@ -593,7 +584,7 @@ document.addEventListener('DOMContentLoaded', () => {
       }
     }
 
-    // Seção de Engenharia, Obra e Disciplina (SEMPRE VISÍVEL NO FORMULÁRIO)
+    // Seção de Engenharia, Obra e Disciplina
     if (secEngenhariaObra) secEngenhariaObra.style.display = ['P6', 'P7'].includes(padrao) ? 'block' : 'none';
     if (wDisc) wDisc.style.display = (padrao === 'P7') ? 'block' : 'none';
 
@@ -619,7 +610,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (secResp) secResp.style.display = ['P1', 'P2', 'P3'].includes(padrao) ? 'block' : 'none';
 
     // Área pré-selecionada conforme o tipo
-    if (meta.areaPadrao && wArea && elArea.dataset.manual !== 'true') {
+    if (meta.areaPadrao && wArea && elArea && elArea.dataset.manual !== 'true') {
       elArea.value = meta.areaPadrao;
     }
   }
@@ -636,22 +627,29 @@ document.addEventListener('DOMContentLoaded', () => {
     // Sigla do Responsável
     const sigCalc = extrairSiglaResponsavel(elResp ? elResp.value : '');
     if (elSigGerada) elSigGerada.textContent = sigCalc;
-    const sigManual = elSigManual ? normalizarSiglaManual(elSigManual.value) : '';
-    if (elSigManual && elSigManual.value !== sigManual) {
+    const exigeResponsavel = ['P1', 'P3'].includes(padrao);
+    const sigManualOriginal = elSigManual ? elSigManual.value.trim() : '';
+    const sigManual = normalizarSiglaManual(sigManualOriginal);
+    const sigManualValida = !sigManualOriginal
+      || /^[A-Z]{2,3}$/.test(removerAcentos(sigManualOriginal).toUpperCase());
+    if (exigeResponsavel && sigManualOriginal && !sigManualValida) {
+      avisos.push('A sigla manual deve conter somente 2 ou 3 letras.');
+      temErroObrigatorio = true;
+    }
+    if (exigeResponsavel && sigManualValida && elSigManual && elSigManual.value !== sigManual) {
       elSigManual.value = sigManual;
     }
-    const respFinal = sigManual || (sigCalc !== '—' ? sigCalc : '');
+    const respFinal = exigeResponsavel
+      ? (sigManualValida && sigManual ? sigManual : (sigCalc !== '—' ? sigCalc : ''))
+      : '';
 
-    if (sigManual && (sigManual.length < 2 || sigManual.length > 3)) {
-      avisos.push('A sigla manual deve conter de 2 a 3 letras.');
-    }
-
-    if (['P1', 'P3'].includes(padrao) && !respFinal) {
+    if (exigeResponsavel && !respFinal && !sigManualOriginal) {
       avisos.push('Informe o nome do responsável ou a sigla manual (2 ou 3 letras).');
       temErroObrigatorio = true;
     }
 
-    // Data e Ano extraídos do calendário suspenso (elData: YYYY-MM-DD)
+    // Data e ano extraídos do calendário (elData: YYYY-MM-DD)
+    const exigeData = exigeDataDocumento(padrao, meta);
     let anoDoc = 'AAAA';
     let dataCompleta = '';
     if (elData && elData.value) {
@@ -659,11 +657,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (pedacos.length === 3) {
         anoDoc = pedacos[0];
         dataCompleta = `${pedacos[2]}${pedacos[1]}${pedacos[0]}`; // DDMMAAAA
+      } else {
+        anoDoc = '';
       }
     } else {
       anoDoc = '';
       dataCompleta = '';
+    }
+    if (exigeData && (!anoDoc || (padrao === 'P6' && !dataCompleta))) {
       avisos.push('Informe a data do documento.');
+      temErroObrigatorio = true;
     }
 
     // Processamento do Assunto
@@ -683,15 +686,21 @@ document.addEventListener('DOMContentLoaded', () => {
         temErroObrigatorio = true;
       }
       // Validação de palavras proibidas (Regra 9 e 10)
-      const textoLower = elAssunto.value.toLowerCase();
+      const textoNormalizado = ` ${removerAcentos(elAssunto.value.toLowerCase())
+        .replace(/[^a-z0-9]+/g, ' ')
+        .trim()
+        .split(/\s+/)
+        .join(' ')} `;
       PALAVRAS_PROIBIDAS.forEach(prob => {
-        if (textoLower.includes(prob)) {
+        if (textoNormalizado.includes(` ${prob} `)) {
           avisos.push(`A palavra "${prob}" é proibida no nome (Regras 9 e 10). Mudanças de conteúdo vão no campo de revisão.`);
+          temErroObrigatorio = true;
         }
       });
       // Validação de dados pessoais (Regra 8)
       if (/\d{3}\.?\d{3}\.?\d{3}-?\d{2}/.test(elAssunto.value) || /\d{11}/.test(elAssunto.value)) {
         avisos.push('Atenção à LGPD (Regra 8): Não inclua CPF ou dados pessoais no nome do arquivo.');
+        temErroObrigatorio = true;
       }
     }
 
@@ -704,8 +713,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const area = (elArea && elArea.value) ? elArea.value : 'ADM';
       const tipo = meta.sigla.replace(/_[A-Z]+/g, '');
       const num = elNum && numeroValido(elNum.value) ? zeroEsquerda(elNum.value, 3) : '';
-      if (!num) avisos.push('Informe o número oficial do documento.');
-      if (!anoDoc) avisos.push('Informe o ano do documento.');
+      if (!num) {
+        avisos.push('Informe o número oficial do documento.');
+        temErroObrigatorio = true;
+      }
+      if (!anoDoc) {
+        avisos.push('Informe o ano do documento.');
+        temErroObrigatorio = true;
+      }
       if (area && tipo && anoDoc && num && respFinal) {
         partes.push(area, tipo, anoDoc, num, respFinal, assuntoTexto);
       }
@@ -716,14 +731,21 @@ document.addEventListener('DOMContentLoaded', () => {
       const area = (elArea && elArea.value) ? elArea.value : 'ADM';
       const tipo = meta.sigla.replace(/_[A-Z]+/g, '');
       const num = elNum && numeroValido(elNum.value) ? zeroEsquerda(elNum.value, 3) : '';
-      if (!num) avisos.push('Informe o número oficial do documento.');
-      if (!anoDoc) avisos.push('Informe o ano do documento.');
+      if (!num) {
+        avisos.push('Informe o número oficial do documento.');
+        temErroObrigatorio = true;
+      }
+      if (!anoDoc) {
+        avisos.push('Informe o ano do documento.');
+        temErroObrigatorio = true;
+      }
       let remetente = removerAcentos(elRemet ? elRemet.value.trim().toLowerCase() : '')
         .replace(/[^a-z0-9\s-]/g, '')
-        .replace(/\s+/g, '-');
+        .replace(/[\s-]+/g, '-')
+        .replace(/^-|-$/g, '');
       if (!remetente) {
-        remetente = 'remetente';
         avisos.push('Informe o remetente externo (Regra P2).');
+        temErroObrigatorio = true;
       }
       if (area && tipo && anoDoc && num && remetente) {
         partes.push(area, tipo, anoDoc, num, 'REC', remetente, assuntoTexto);
@@ -735,14 +757,21 @@ document.addEventListener('DOMContentLoaded', () => {
       const area = (elArea && elArea.value) ? elArea.value : 'ADM';
       const tipo = meta.sigla.replace(/_[A-Z]+/g, '');
       const dataDoc = meta.dataCompleta ? dataCompleta : anoDoc;
+      if (!dataDoc) temErroObrigatorio = true;
+      if (!respFinal) temErroObrigatorio = true;
       if (area && tipo && dataDoc && respFinal) {
         partes.push(area, tipo, dataDoc, respFinal, assuntoTexto);
       }
 
       // P3 com revisão
-      if (elUsaRev && elUsaRev.checked && elRev && elRev.value.trim()) {
-        const r = zeroEsquerda(elRev.value, 2) || '00';
-        partes[partes.length - 1] = `${assuntoTexto}-R${r}`;
+      if (elUsaRev && elUsaRev.checked) {
+        if (elRev && numeroValido(elRev.value)) {
+          const r = zeroEsquerda(elRev.value, 2);
+          if (partes.length) partes[partes.length - 1] = `${assuntoTexto}-R${r}`;
+        } else {
+          avisos.push('Informe o número da revisão.');
+          temErroObrigatorio = true;
+        }
       }
       if (elPadrao) {
         elPadrao.textContent = meta.dataCompleta
@@ -754,8 +783,14 @@ document.addEventListener('DOMContentLoaded', () => {
       // NRM-TIPO-AAAA-NNNN-assunto.ext (4 dígitos no número)
       const tipo = meta.sigla;
       const num = elNum && numeroValido(elNum.value) ? zeroEsquerda(elNum.value, 4) : '';
-      if (!num) avisos.push('Informe o número do ato normativo.');
-      if (!anoDoc) avisos.push('Informe o ano do ato normativo.');
+      if (!num) {
+        avisos.push('Informe o número do ato normativo.');
+        temErroObrigatorio = true;
+      }
+      if (!anoDoc) {
+        avisos.push('Informe o ano do ato normativo.');
+        temErroObrigatorio = true;
+      }
       if (tipo && anoDoc && num) partes.push('NRM', tipo, anoDoc, num, assuntoTexto);
       if (elPadrao) elPadrao.textContent = 'NRM-TIPO-AAAA-NNNN-assunto.ext';
 
@@ -764,8 +799,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const orgao = (elOrgao && elOrgao.value) ? elOrgao.value : 'MPE';
       const num = elNum && numeroValido(elNum.value) ? zeroEsquerda(elNum.value, 3) : '';
       const sentido = (elSentido && elSentido.value) ? elSentido.value : 'REC';
-      if (!num) avisos.push('Informe o número da demanda oficial.');
-      if (!anoDoc) avisos.push('Informe o ano da demanda.');
+      if (!num) {
+        avisos.push('Informe o número da demanda oficial.');
+        temErroObrigatorio = true;
+      }
+      if (!anoDoc) {
+        avisos.push('Informe o ano da demanda.');
+        temErroObrigatorio = true;
+      }
       if (orgao && anoDoc && num) partes.push('CTL', orgao, anoDoc, num, sentido, assuntoTexto);
       if (elPadrao) elPadrao.textContent = `CTL-ÓRGÃO-AAAA-NNN-${sentido}-assunto.ext`;
 
@@ -773,35 +814,48 @@ document.addEventListener('DOMContentLoaded', () => {
       // OBR-AAAA-[NNN]-TIPO-SEQ-assunto.ext
       const anoObra = elCodAno && anoValido(elCodAno.value) ? elCodAno.value.trim() : '';
       const codigoObraInformado = Boolean(elCodSeq && elCodSeq.value.trim());
-      const seqObra = codigoObraInformado && numeroValido(elCodSeq.value)
+      const seqObra = codigoObraInformado && /^\d{1,3}$/.test(elCodSeq.value.trim())
         ? zeroEsquerda(elCodSeq.value, 3)
         : '';
       const tipoObra = meta.tipoObra || 'BMD';
-
-      if (!anoObra) avisos.push('Informe o ano do código da obra.');
-      if (codigoObraInformado && !seqObra) {
-        avisos.push('O código da obra deve conter apenas números.');
+      let seqVal = '';
+      if (meta.seqTipo === 'num') {
+        seqVal = elSeq && numeroValido(elSeq.value) ? zeroEsquerda(elSeq.value, 2) : '';
+        if (!seqVal) {
+          avisos.push('Informe o sequencial dentro da obra.');
+          temErroObrigatorio = true;
+        }
       }
-      if (anoObra) {
+
+      if (!anoObra) {
+        avisos.push('Informe o ano do código da obra.');
+        temErroObrigatorio = true;
+      }
+      if (codigoObraInformado && !seqObra) {
+        avisos.push('O código da obra deve conter de 1 a 3 dígitos.');
+        temErroObrigatorio = true;
+      }
+
+      // Revisão para CRN ou sob demanda
+      const revisaoObrigatoria = meta.tipoObra === 'CRN' || (elUsaRev && elUsaRev.checked);
+      const revisaoObra = revisaoObrigatoria && elRev && numeroValido(elRev.value)
+        ? zeroEsquerda(elRev.value, 2)
+        : '';
+      if (revisaoObrigatoria && !revisaoObra) {
+        avisos.push('Informe o número da revisão.');
+        temErroObrigatorio = true;
+      }
+      const sequencialValido = meta.seqTipo !== 'num' || Boolean(seqVal);
+      const dataSequencialValida = meta.seqTipo !== 'data' || Boolean(dataCompleta);
+      const codigoValido = !codigoObraInformado || Boolean(seqObra);
+      if (anoObra && sequencialValido && dataSequencialValida && codigoValido
+        && (!revisaoObrigatoria || revisaoObra)) {
         partes.push('OBR', anoObra);
         if (seqObra) partes.push(seqObra);
         partes.push(tipoObra);
-      }
-
-      if (meta.seqTipo === 'num') {
-        const seqVal = elSeq && numeroValido(elSeq.value) ? zeroEsquerda(elSeq.value, 2) : '';
-        if (!seqVal) avisos.push('Informe o sequencial dentro da obra.');
         if (seqVal) partes.push(seqVal);
-      } else if (meta.seqTipo === 'data') {
-        if (dataCompleta) partes.push(dataCompleta);
-      }
-
-      if (partes[0] === 'OBR') partes.push(assuntoTexto);
-
-      // Revisão para CRN ou sob demanda
-      if (meta.tipoObra === 'CRN' || (elUsaRev && elUsaRev.checked && elRev && elRev.value.trim())) {
-        const r = zeroEsquerda(elRev ? elRev.value : '0', 2) || '00';
-        partes[partes.length - 1] = `${assuntoTexto}-R${r}`;
+        if (meta.seqTipo === 'data') partes.push(dataCompleta);
+        partes.push(`${assuntoTexto}${revisaoObra ? `-R${revisaoObra}` : ''}`);
       }
 
       if (elPadrao) elPadrao.textContent = 'OBR-AAAA-[NNN]-TIPO-SEQ-assunto.ext';
@@ -810,20 +864,28 @@ document.addEventListener('DOMContentLoaded', () => {
       // PRJ-AAAA-[NNN]-FASE-TIPO-DISC-assunto-Rnn.ext
       const anoPrj = elCodAno && anoValido(elCodAno.value) ? elCodAno.value.trim() : '';
       const codigoProjetoInformado = Boolean(elCodSeq && elCodSeq.value.trim());
-      const seqPrj = codigoProjetoInformado && numeroValido(elCodSeq.value)
+      const seqPrj = codigoProjetoInformado && /^\d{1,3}$/.test(elCodSeq.value.trim())
         ? zeroEsquerda(elCodSeq.value, 3)
         : '';
       const fase = (elFase && elFase.value) ? elFase.value : 'EPR';
       const tipoPrj = meta.tipoPrj || 'PRA';
       const disc = (elDisc && elDisc.value) ? elDisc.value : 'ARQ';
-      const r = zeroEsquerda(elRev ? elRev.value : '0', 2) || '00';
+      const r = elRev && numeroValido(elRev.value) ? zeroEsquerda(elRev.value, 2) : '';
 
-      if (!anoPrj) avisos.push('Informe o ano do código do projeto.');
-      if (codigoProjetoInformado && !seqPrj) {
-        avisos.push('O código do projeto deve conter apenas números.');
+      if (!anoPrj) {
+        avisos.push('Informe o ano do código do projeto.');
+        temErroObrigatorio = true;
       }
-      if (!elRev || !elRev.value.trim()) avisos.push('Informe a revisão do projeto (começa em R00).');
-      if (anoPrj) {
+      if (codigoProjetoInformado && !seqPrj) {
+        avisos.push('O código do projeto deve conter de 1 a 3 dígitos.');
+        temErroObrigatorio = true;
+      }
+      if (!r) {
+        avisos.push('Informe a revisão do projeto (começa em R00).');
+        temErroObrigatorio = true;
+      }
+      const codigoProjetoValido = !codigoProjetoInformado || Boolean(seqPrj);
+      if (anoPrj && codigoProjetoValido && r) {
         partes.push('PRJ', anoPrj);
         if (seqPrj) partes.push(seqPrj);
         partes.push(fase, tipoPrj, disc, `${assuntoTexto}-R${r}`);
@@ -834,12 +896,16 @@ document.addEventListener('DOMContentLoaded', () => {
       // MOD-TIPO-assunto-Vnn.ext
       const tipoReal = meta.sigla.replace(/_[A-Z]+/g, '');
       const v = elVers && numeroValido(elVers.value) ? zeroEsquerda(elVers.value, 2) : '';
-      if (!v) avisos.push('Informe a versão do modelo (começa em V01).');
+      if (!v) {
+        avisos.push('Informe a versão do modelo (começa em V01).');
+        temErroObrigatorio = true;
+      }
       if (tipoReal && v) partes.push('MOD', tipoReal, `${assuntoTexto}-V${v}`);
       if (elPadrao) elPadrao.textContent = 'MOD-TIPO-assunto-Vnn.ext';
     }
 
     const nomeBase = partes.join('-');
+    if (!nomeBase) temErroObrigatorio = true;
 
     // Renderizar Avisos
     if (elAvisos) {
@@ -875,6 +941,8 @@ document.addEventListener('DOMContentLoaded', () => {
         btnCopiar.type = 'button';
         btnCopiar.className = 'btn-copy-item';
         btnCopiar.textContent = 'Copiar';
+        btnCopiar.setAttribute('aria-label', `Copiar ${nomeCompleto || 'nome do arquivo'}`);
+        btnCopiar.disabled = temErroObrigatorio || nomeCompleto.length > 80 || !nomeBase;
         btnCopiar.addEventListener('click', async () => {
           try {
             await copiarTexto(nomeCompleto);
@@ -905,18 +973,8 @@ document.addEventListener('DOMContentLoaded', () => {
       }
       if (elCharBadge) elCharBadge.classList.remove('ok', 'warn', 'danger');
 
-      if (maiorComprimento <= 65) {
-        if (elCharBadge) {
-          elCharBadge.textContent = 'Válido';
-          elCharBadge.classList.add('ok');
-        }
-      } else if (maiorComprimento <= 80) {
-        if (elCharBadge) {
-          elCharBadge.textContent = 'Quase no limite';
-          elCharBadge.classList.add('warn');
-        }
-        if (elCharProgress) elCharProgress.classList.add('warn');
-      } else {
+      if (maiorComprimento > 80) {
+        temErroObrigatorio = true;
         if (elCharBadge) {
           elCharBadge.textContent = 'Excedeu 80 caracteres';
           elCharBadge.classList.add('danger');
@@ -932,6 +990,26 @@ document.addEventListener('DOMContentLoaded', () => {
           avisoLimite.textContent = '⛔ Regra 5 violada: O nome ultrapassou 80 caracteres. Encurte o assunto (nunca os campos de código).';
           elAvisos.prepend(avisoLimite);
         }
+      } else if (temErroObrigatorio) {
+        if (elCharBadge) {
+          elCharBadge.textContent = 'Revise os campos';
+          elCharBadge.classList.add('warn');
+        }
+        if (elCharProgress) elCharProgress.classList.add('warn');
+      } else if (maiorComprimento <= 65) {
+        if (elCharBadge) {
+          elCharBadge.textContent = 'Válido';
+          elCharBadge.classList.add('ok');
+        }
+      } else if (maiorComprimento <= 80) {
+        if (elCharBadge) {
+          elCharBadge.textContent = 'Quase no limite';
+          elCharBadge.classList.add('warn');
+        }
+        if (elCharProgress) elCharProgress.classList.add('warn');
+      }
+      if (elAddLista) {
+        elAddLista.disabled = temErroObrigatorio || maiorComprimento > 80;
       }
     }
   }
@@ -982,6 +1060,7 @@ document.addEventListener('DOMContentLoaded', () => {
       if (elExts) {
         elExts.querySelectorAll('.chip').forEach(chip => {
           chip.classList.remove('active');
+          chip.setAttribute('aria-pressed', 'false');
         });
       }
       atualizarInterfaceENomes();
@@ -1015,6 +1094,7 @@ document.addEventListener('DOMContentLoaded', () => {
       btnRemover.className = 'btn-copy-item';
       btnRemover.textContent = '✖';
       btnRemover.title = 'Remover da lista';
+      btnRemover.setAttribute('aria-label', `Remover ${nome} da lista`);
       btnRemover.addEventListener('click', () => {
         sessionList.splice(index, 1);
         renderizarListaSessao();
@@ -1028,9 +1108,10 @@ document.addEventListener('DOMContentLoaded', () => {
 
   if (elAddLista) {
     elAddLista.addEventListener('click', () => {
+      if (elAddLista.disabled || !elSaidas) return;
       const saidasAtuais = elSaidas.querySelectorAll('.saida-nome');
       saidasAtuais.forEach(span => {
-        const nome = span.textContent;
+        const nome = span.textContent.trim();
         if (nome && !sessionList.includes(nome)) {
           sessionList.push(nome);
         }
@@ -1068,12 +1149,14 @@ document.addEventListener('DOMContentLoaded', () => {
       const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8' });
       const url = URL.createObjectURL(blob);
       const link = document.createElement('a');
+      const agora = new Date();
+      const dataLocal = `${agora.getFullYear()}-${String(agora.getMonth() + 1).padStart(2, '0')}-${String(agora.getDate()).padStart(2, '0')}`;
       link.setAttribute('href', url);
-      link.setAttribute('download', `nomes-seinfra-${new Date().toISOString().slice(0, 10)}.csv`);
+      link.setAttribute('download', `nomes-seinfra-${dataLocal}.csv`);
       document.body.appendChild(link);
       link.click();
       document.body.removeChild(link);
-      URL.revokeObjectURL(url);
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
   }
 

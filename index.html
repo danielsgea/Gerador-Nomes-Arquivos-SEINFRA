@@ -11,10 +11,9 @@
 <header class="app-header">
   <div class="header-container">
     <div class="header-brand">
-      <div class="badge-org">SEINFRA</div>
+      <img class="header-logo" src="logomarca.jpeg" alt="Secretaria Municipal de Infraestrutura e Serviços Urbanos de São José de Piranhas">
       <div>
         <h1>Gerador de Nomes de Arquivos</h1>
-        <p class="header-subtitle">Norma Oficial de Nomenclatura (12/11/2026 · Padrões P1 a P8)</p>
       </div>
     </div>
     <div class="header-actions">
@@ -119,7 +118,7 @@
           </div>
           <div id="w_codigo_seq" class="field-col">
             <label for="cod_seq">Cód. Obra/Projeto <small>(3 dígitos, opcional)</small></label>
-            <input type="text" id="cod_seq" inputmode="numeric" placeholder="1">
+            <input type="text" id="cod_seq" inputmode="numeric" maxlength="3" placeholder="1">
           </div>
           <div id="w_seq_obra" class="field-col">
             <label for="seq">Sequencial na obra <small>(1ª medição = 01)</small></label>
@@ -179,7 +178,7 @@
 
   <!-- COLUNA 2: RESULTADOS, VALIDAÇÃO DA NORMA E SESSÃO -->
   <div class="column-output">
-    <section class="card output-card sticky-card">
+    <section class="card output-card">
       <div class="card-header">
         <h2>Resultado Gerado</h2>
         <span class="badge-status" id="badge_status">Ao vivo</span>
@@ -201,7 +200,7 @@
         </div>
       </div>
 
-      <div id="avisos" class="alert-container"></div>
+      <div id="avisos" class="alert-container" role="status" aria-live="polite" aria-atomic="true"></div>
       
       <div class="output-list-wrapper">
         <div id="saidas" class="saidas-container"></div>
@@ -230,7 +229,7 @@
 
 <footer class="app-footer">
   <div class="footer-container">
-    <p><strong>Norma de Nomenclatura SEINFRA (12/11/2026):</strong> Hífen como único separador · Códigos em MAIÚSCULAS · Assunto em minúsculas (2 a 5 palavras) · Máx. 80 caracteres · Sem dados pessoais (LGPD) · Mudanças de conteúdo registradas no campo de revisão.</p>
+    <p>Daniël Silva · Contato: <a href="mailto:danielsgea@gmail.com">danielsgea@gmail.com</a> · GitHub: <a href="https://github.com/danielsgea">@danielsgea</a></p>
   </div>
 </footer>
 
@@ -244,25 +243,38 @@
 
     function applyTheme(theme) {
       html.setAttribute('data-theme', theme);
-      localStorage.setItem('seinfra_theme', theme);
+      if (toggleBtn) toggleBtn.setAttribute('aria-pressed', String(theme === 'dark'));
+      try {
+        localStorage.setItem('seinfra_theme', theme);
+      } catch (error) {
+        console.warn('Não foi possível salvar a preferência de tema.', error);
+      }
       if (theme === 'dark') {
-        themeIcon.textContent = '☀️';
-        themeText.textContent = 'Modo Claro';
+        if (themeIcon) themeIcon.textContent = '☀️';
+        if (themeText) themeText.textContent = 'Modo Claro';
       } else {
-        themeIcon.textContent = '🌙';
-        themeText.textContent = 'Modo Escuro';
+        if (themeIcon) themeIcon.textContent = '🌙';
+        if (themeText) themeText.textContent = 'Modo Escuro';
       }
     }
 
-    const savedTheme = localStorage.getItem('seinfra_theme');
+    let savedTheme = null;
+    try {
+      savedTheme = localStorage.getItem('seinfra_theme');
+    } catch (error) {
+      console.warn('Não foi possível ler a preferência de tema.', error);
+    }
+    if (savedTheme !== 'dark' && savedTheme !== 'light') savedTheme = null;
     const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
     const initialTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
     applyTheme(initialTheme);
 
-    toggleBtn.addEventListener('click', function() {
-      const currentTheme = html.getAttribute('data-theme') || 'light';
-      applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
-    });
+    if (toggleBtn) {
+      toggleBtn.addEventListener('click', function() {
+        const currentTheme = html.getAttribute('data-theme') || 'light';
+        applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+      });
+    }
   })();
 </script>
 

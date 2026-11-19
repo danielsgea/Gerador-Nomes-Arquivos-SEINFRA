@@ -95,9 +95,28 @@ body {
   color: var(--text-main);
   line-height: 1.5;
   min-height: 100vh;
+  min-height: 100dvh;
+  padding-bottom: 4.5rem;
   display: flex;
   flex-direction: column;
   transition: background-color 0.25s ease, color 0.25s ease;
+}
+
+img {
+  max-width: 100%;
+}
+
+button,
+input,
+select {
+  font: inherit;
+}
+
+button:focus-visible,
+input:focus-visible,
+select:focus-visible {
+  outline: 3px solid var(--border-focus);
+  outline-offset: 2px;
 }
 
 /* ==========================================================================
@@ -107,7 +126,7 @@ body {
   background: var(--bg-card);
   border-bottom: 1px solid var(--border);
   box-shadow: var(--shadow-sm);
-  padding: 1rem 1.5rem;
+  padding: 0.35rem 1.5rem;
   position: sticky;
   top: 0;
   z-index: 100;
@@ -127,16 +146,20 @@ body {
   display: flex;
   align-items: center;
   gap: 0.85rem;
+  min-width: 0;
 }
 
-.badge-org {
-  background: var(--primary);
-  color: var(--text-inverse);
-  font-weight: 800;
-  font-size: 0.85rem;
-  letter-spacing: 0.05em;
-  padding: 0.35rem 0.65rem;
-  border-radius: var(--radius-sm);
+.header-brand > div {
+  min-width: 0;
+}
+
+.header-logo {
+  display: block;
+  width: 200px;
+  max-width: 40%;
+  height: auto;
+  object-fit: contain;
+  flex-shrink: 0;
 }
 
 .header-brand h1 {
@@ -144,11 +167,6 @@ body {
   font-weight: 700;
   color: var(--text-main);
   line-height: 1.2;
-}
-
-.header-subtitle {
-  font-size: 0.82rem;
-  color: var(--text-muted);
 }
 
 .theme-toggle {
@@ -180,9 +198,23 @@ body {
   margin: 1.5rem auto;
   padding: 0 1.25rem;
   display: grid;
-  grid-template-columns: 1.15fr 0.85fr;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 0.85fr);
   gap: 1.5rem;
-  align-items: start;
+  align-items: stretch;
+  flex: 1;
+}
+
+.column-form,
+.column-output {
+  min-width: 0;
+}
+
+.column-form {
+  display: flex;
+  flex-direction: column;
+}
+
+.form-card {
   flex: 1;
 }
 
@@ -200,8 +232,10 @@ body {
 
 .card-header {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 0.5rem;
   margin-bottom: 1.25rem;
   border-bottom: 1px solid var(--border-sub);
   padding-bottom: 0.75rem;
@@ -246,6 +280,10 @@ body {
 
 .form-title-row .label-primary {
   margin-bottom: 0;
+  font-size: 0.78rem;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  color: var(--primary-text);
 }
 
 .label-primary {
@@ -281,6 +319,7 @@ input[type="text"],
 input[type="date"],
 select {
   width: 100%;
+  min-height: 42px;
   padding: 0.55rem 0.75rem;
   font-size: 0.88rem;
   color: var(--text-main);
@@ -300,7 +339,7 @@ select:focus {
 
 input[type="date"] {
   color-scheme: light;
-  width: auto;
+  width: 100%;
 }
 
 [data-theme="dark"] input[type="date"] {
@@ -328,6 +367,10 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   grid-column: 1 / -1;
 }
 
+.field-col {
+  min-width: 0;
+}
+
 /* Checkboxes */
 .checks-wrapper {
   display: flex;
@@ -343,6 +386,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   background: var(--bg-card-sub);
   border: 1px solid var(--border);
   padding: 0.45rem 0.75rem;
+  min-height: 40px;
   border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 0.82rem;
@@ -375,7 +419,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
 .resp-name-field {
   flex: 1;
-  min-width: 200px;
+  min-width: 0;
 }
 
 .resp-sig-field {
@@ -391,6 +435,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   align-items: center;
   gap: 0.75rem;
   padding: 0.35rem 0.65rem;
+  min-height: 40px;
   background: var(--bg-card);
   border: 1px solid var(--border);
   border-radius: var(--radius-sm);
@@ -481,11 +526,6 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
   gap: 1.5rem;
 }
 
-.sticky-card {
-  position: sticky;
-  top: 5rem;
-}
-
 .badge-status {
   background: var(--accent-subtle);
   color: var(--accent);
@@ -528,6 +568,7 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .p-desc {
+  min-width: 0;
   font-size: 0.82rem;
   color: var(--text-muted);
   font-weight: 500;
@@ -544,8 +585,10 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 
 .char-info {
   display: flex;
+  flex-wrap: wrap;
   justify-content: space-between;
   align-items: center;
+  gap: 0.35rem;
   font-size: 0.8rem;
   color: var(--text-muted);
   margin-bottom: 0.4rem;
@@ -650,6 +693,8 @@ input[type="date"]::-webkit-calendar-picker-indicator:hover {
 }
 
 .saida-nome {
+  min-width: 0;
+  flex: 1;
   font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace;
   font-size: 0.85rem;
   font-weight: 600;
@@ -701,6 +746,14 @@ button {
 
 .btn-primary:hover {
   background: var(--primary-hover);
+}
+
+.btn-primary:disabled,
+.btn-secondary:disabled,
+.btn-danger:disabled,
+.btn-copy-item:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
 }
 
 .btn-primary:active {
@@ -778,21 +831,43 @@ button {
   background: var(--danger-border);
 }
 
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    transition-duration: 0.01ms !important;
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+  }
+}
+
 /* ==========================================================================
    RODAPÉ
    ========================================================================== */
 .app-footer {
-  margin-top: auto;
+  position: fixed;
+  right: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 90;
   background: var(--bg-card);
   border-top: 1px solid var(--border);
-  padding: 1.25rem 1.5rem;
+  padding: 0.35rem 1.5rem;
   font-size: 0.8rem;
   color: var(--text-muted);
+  box-shadow: 0 -4px 12px rgba(15, 23, 42, 0.12);
 }
 
 .footer-container {
   max-width: 1380px;
   margin: 0 auto;
+  text-align: center;
+}
+
+.footer-container a {
+  color: var(--primary-text);
+  overflow-wrap: anywhere;
 }
 
 /* ==========================================================================
@@ -804,19 +879,33 @@ button {
     gap: 1.5rem;
   }
 
-  .sticky-card {
-    position: static;
-  }
 }
 
 @media (max-width: 640px) {
+  body {
+    padding-bottom: 6rem;
+  }
+
   .app-header {
-    padding: 0.75rem 1rem;
+    padding: 0.35rem 0.75rem;
   }
 
   .header-container {
     flex-direction: column;
     align-items: flex-start;
+    gap: 0.25rem;
+  }
+
+  .header-brand {
+    width: 100%;
+  }
+
+  .header-logo {
+    width: 35%;
+  }
+
+  .header-brand h1 {
+    font-size: 1.15rem;
   }
 
   .header-actions {
@@ -836,6 +925,7 @@ button {
 
   .grid {
     grid-template-columns: 1fr;
+    gap: 0.85rem;
   }
 
   .resp-box {
@@ -857,5 +947,24 @@ button {
 
   .list-actions button {
     width: 100%;
+    min-height: 44px;
+  }
+
+  .btn-clean,
+  .btn-copy-item {
+    min-height: 40px;
+  }
+
+  .theme-toggle {
+    min-height: 32px;
+    padding: 0.3rem 0.7rem;
+  }
+
+  .saida-item {
+    align-items: flex-start;
+  }
+
+  .app-footer {
+    padding: 0.3rem 0.75rem;
   }
 }
