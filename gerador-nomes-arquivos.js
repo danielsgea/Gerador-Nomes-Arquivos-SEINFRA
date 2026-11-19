@@ -247,11 +247,11 @@ document.addEventListener('DOMContentLoaded', () => {
     },
     P6: {
       nome: 'P6 — Documento de obra',
-      estrutura: 'OBR-AAAA-NNN-TIPO-SEQ-assunto.ext'
+      estrutura: 'OBR-AAAA-[NNN]-TIPO-SEQ-assunto.ext'
     },
     P7: {
       nome: 'P7 — Documento de projeto de engenharia',
-      estrutura: 'PRJ-AAAA-NNN-FASE-TIPO-DISC-assunto-Rnn.ext'
+      estrutura: 'PRJ-AAAA-[NNN]-FASE-TIPO-DISC-assunto-Rnn.ext'
     },
     P8: {
       nome: 'P8 — Modelo (arquivo em branco para reuso)',
@@ -770,14 +770,23 @@ document.addEventListener('DOMContentLoaded', () => {
       if (elPadrao) elPadrao.textContent = `CTL-ÓRGÃO-AAAA-NNN-${sentido}-assunto.ext`;
 
     } else if (padrao === 'P6') {
-      // OBR-AAAA-NNN-TIPO-SEQ-assunto.ext
+      // OBR-AAAA-[NNN]-TIPO-SEQ-assunto.ext
       const anoObra = elCodAno && anoValido(elCodAno.value) ? elCodAno.value.trim() : '';
-      const seqObra = elCodSeq && numeroValido(elCodSeq.value) ? zeroEsquerda(elCodSeq.value, 3) : '';
+      const codigoObraInformado = Boolean(elCodSeq && elCodSeq.value.trim());
+      const seqObra = codigoObraInformado && numeroValido(elCodSeq.value)
+        ? zeroEsquerda(elCodSeq.value, 3)
+        : '';
       const tipoObra = meta.tipoObra || 'BMD';
 
       if (!anoObra) avisos.push('Informe o ano do código da obra.');
-      if (!seqObra) avisos.push('Informe o sequencial do código da obra.');
-      if (anoObra && seqObra) partes.push('OBR', anoObra, seqObra, tipoObra);
+      if (codigoObraInformado && !seqObra) {
+        avisos.push('O código da obra deve conter apenas números.');
+      }
+      if (anoObra) {
+        partes.push('OBR', anoObra);
+        if (seqObra) partes.push(seqObra);
+        partes.push(tipoObra);
+      }
 
       if (meta.seqTipo === 'num') {
         const seqVal = elSeq && numeroValido(elSeq.value) ? zeroEsquerda(elSeq.value, 2) : '';
@@ -795,24 +804,31 @@ document.addEventListener('DOMContentLoaded', () => {
         partes[partes.length - 1] = `${assuntoTexto}-R${r}`;
       }
 
-      if (elPadrao) elPadrao.textContent = 'OBR-AAAA-NNN-TIPO-SEQ-assunto.ext';
+      if (elPadrao) elPadrao.textContent = 'OBR-AAAA-[NNN]-TIPO-SEQ-assunto.ext';
 
     } else if (padrao === 'P7') {
-      // PRJ-AAAA-NNN-FASE-TIPO-DISC-assunto-Rnn.ext
+      // PRJ-AAAA-[NNN]-FASE-TIPO-DISC-assunto-Rnn.ext
       const anoPrj = elCodAno && anoValido(elCodAno.value) ? elCodAno.value.trim() : '';
-      const seqPrj = elCodSeq && numeroValido(elCodSeq.value) ? zeroEsquerda(elCodSeq.value, 3) : '';
+      const codigoProjetoInformado = Boolean(elCodSeq && elCodSeq.value.trim());
+      const seqPrj = codigoProjetoInformado && numeroValido(elCodSeq.value)
+        ? zeroEsquerda(elCodSeq.value, 3)
+        : '';
       const fase = (elFase && elFase.value) ? elFase.value : 'EPR';
       const tipoPrj = meta.tipoPrj || 'PRA';
       const disc = (elDisc && elDisc.value) ? elDisc.value : 'ARQ';
       const r = zeroEsquerda(elRev ? elRev.value : '0', 2) || '00';
 
       if (!anoPrj) avisos.push('Informe o ano do código do projeto.');
-      if (!seqPrj) avisos.push('Informe o sequencial do código do projeto.');
-      if (!elRev || !elRev.value.trim()) avisos.push('Informe a revisão do projeto (começa em R00).');
-      if (anoPrj && seqPrj) {
-        partes.push('PRJ', anoPrj, seqPrj, fase, tipoPrj, disc, `${assuntoTexto}-R${r}`);
+      if (codigoProjetoInformado && !seqPrj) {
+        avisos.push('O código do projeto deve conter apenas números.');
       }
-      if (elPadrao) elPadrao.textContent = 'PRJ-AAAA-NNN-FASE-TIPO-DISC-assunto-Rnn.ext';
+      if (!elRev || !elRev.value.trim()) avisos.push('Informe a revisão do projeto (começa em R00).');
+      if (anoPrj) {
+        partes.push('PRJ', anoPrj);
+        if (seqPrj) partes.push(seqPrj);
+        partes.push(fase, tipoPrj, disc, `${assuntoTexto}-R${r}`);
+      }
+      if (elPadrao) elPadrao.textContent = 'PRJ-AAAA-[NNN]-FASE-TIPO-DISC-assunto-Rnn.ext';
 
     } else if (padrao === 'P8') {
       // MOD-TIPO-assunto-Vnn.ext
