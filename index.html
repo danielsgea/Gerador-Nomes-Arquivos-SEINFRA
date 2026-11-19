@@ -1,0 +1,271 @@
+<!doctype html>
+<html lang="pt-BR" data-theme="light">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Gerador de Nomes de Arquivos — SEINFRA</title>
+<link rel="stylesheet" href="gerador-nomes-arquivos.css">
+</head>
+<body>
+
+<header class="app-header">
+  <div class="header-container">
+    <div class="header-brand">
+      <div class="badge-org">SEINFRA</div>
+      <div>
+        <h1>Gerador de Nomes de Arquivos</h1>
+        <p class="header-subtitle">Norma Oficial de Nomenclatura (12/11/2026 · Padrões P1 a P8)</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <button type="button" id="themeToggle" class="theme-toggle" aria-label="Alternar tema">
+        <span id="themeIcon">🌙</span>
+        <span id="themeText">Modo Escuro</span>
+      </button>
+    </div>
+  </div>
+</header>
+
+<main class="app-main">
+  <!-- COLUNA 1: FORMULÁRIO DINÂMICO CONFORME A NORMA -->
+  <div class="column-form">
+    <section class="card form-card">
+
+      <!-- SEÇÃO 1: CLASSIFICAÇÃO PRINCIPAL -->
+      <div class="form-group-section">
+        <div class="form-title-row">
+          <label for="tipo" class="label-primary">Tipo de Documento</label>
+          <button type="button" id="limpar" class="btn-clean" title="Limpar todos os campos">
+            🔄 Limpar
+          </button>
+        </div>
+        <select id="tipo" class="input-primary"></select>
+
+        <div class="pattern-indicator-bar" id="p_badge_bar">
+          <span class="p-badge" id="p_badge">P1</span>
+          <span class="p-desc" id="p_desc">Documento numerado elaborado pela Secretaria</span>
+        </div>
+
+        <div class="checks-wrapper">
+          <label id="w_recebido" class="check-item">
+            <input type="checkbox" id="recebido">
+            <span class="check-text">Recebido de fora (P2)</span>
+          </label>
+          <label id="w_modelo" class="check-item">
+            <input type="checkbox" id="modelo">
+            <span class="check-text">É modelo em branco para reuso (P8)</span>
+          </label>
+          <label id="w_usarev" class="check-item">
+            <input type="checkbox" id="usarev">
+            <span class="check-text">Adicionar revisão (-Rnn)</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- SEÇÃO 2: IDENTIFICAÇÃO E ÁREA -->
+      <div class="form-subheading" id="sub_ident">Identificação & Localização</div>
+      <div class="grid">
+        <div id="w_area" class="field-col">
+          <label for="area">Área da Secretaria</label>
+          <select id="area"></select>
+        </div>
+
+        <div id="w_data" class="field-col">
+          <label for="data">Data do documento</label>
+          <input type="date" id="data">
+        </div>
+
+        <div id="w_num" class="field-col">
+          <label for="num" id="l_num">Número oficial</label>
+          <input type="text" id="num" inputmode="numeric" placeholder="1">
+        </div>
+
+        <!-- Órgão de Controle (P5) -->
+        <div id="w_orgao" class="field-col">
+          <label for="orgao">Órgão de controle</label>
+          <select id="orgao"></select>
+        </div>
+
+        <div id="w_sentido" class="field-col">
+          <label for="sentido">Sentido do trâmite</label>
+          <select id="sentido">
+            <option value="REC">Demanda recebida (REC)</option>
+            <option value="RSP">Resposta da Secretaria (RSP)</option>
+          </select>
+        </div>
+
+        <!-- Remetente (P2) -->
+        <div id="w_remet" class="field-col full">
+          <label for="remet">Remetente externo <small>(órgão ou empresa; sairá em minúsculas, ex.: der-pb)</small></label>
+          <input type="text" id="remet" placeholder="ex.: DER PB ou Construtora Alfa">
+        </div>
+      </div>
+
+      <!-- SEÇÃO 3: ENGENHARIA, OBRA & DISCIPLINA -->
+      <div id="sec_engenharia_obra">
+        <div class="form-subheading" id="sub_eng">Engenharia, Obra & Disciplina</div>
+        <div class="grid">
+          <div id="w_disc" class="field-col">
+            <label for="disc">Disciplina de engenharia</label>
+            <select id="disc"></select>
+          </div>
+          <div id="w_fase" class="field-col">
+            <label for="fase">Fase do projeto</label>
+            <select id="fase"></select>
+          </div>
+          <div id="w_codigo_ano" class="field-col">
+            <label for="cod_ano">Ano da obra/projeto</label>
+            <input type="text" id="cod_ano" inputmode="numeric" maxlength="4" placeholder="ex.: 2026">
+          </div>
+          <div id="w_codigo_seq" class="field-col">
+            <label for="cod_seq">Cód. Obra/Projeto <small>(3 dígitos)</small></label>
+            <input type="text" id="cod_seq" inputmode="numeric" placeholder="1">
+          </div>
+          <div id="w_seq_obra" class="field-col">
+            <label for="seq">Sequencial na obra <small>(1ª medição = 01)</small></label>
+            <input type="text" id="seq" inputmode="numeric" placeholder="1">
+          </div>
+          <div id="w_rev" class="field-col">
+            <label for="rev" id="l_rev">Revisão <small>(R00, R01...)</small></label>
+            <input type="text" id="rev" inputmode="numeric" placeholder="0">
+          </div>
+          <div id="w_vers" class="field-col">
+            <label for="vers">Versão do modelo (P8)</label>
+            <input type="text" id="vers" inputmode="numeric" placeholder="1">
+          </div>
+        </div>
+      </div>
+
+      <!-- SEÇÃO 6: RESPONSÁVEL / AUTORIA -->
+      <div id="sec_resp">
+        <div class="form-subheading">Autoria & Responsabilidade</div>
+        <div id="w_resp" class="resp-box">
+          <div class="resp-sig-field">
+            <label>Sigla do Responsável</label>
+            <div class="sig-badge-container">
+              <div class="sig-display">
+                <span>Sigla:</span>
+                <span id="sigGerada" class="sig-tag">—</span>
+              </div>
+              <div class="sig-manual-wrapper">
+                <label for="sigManual">Trocar:</label>
+                <input class="sig-manual" type="text" id="sigManual" maxlength="3" placeholder="Ex: AGB">
+              </div>
+            </div>
+          </div>
+          <div class="resp-name-field">
+            <label for="resp">Nome completo de quem elaborou</label>
+            <input type="text" id="resp" placeholder="ex.: Antonio Gomes Barbosa" autocomplete="off">
+          </div>
+        </div>
+      </div>
+
+      <!-- SEÇÃO 7: ASSUNTO E EXTENSÕES -->
+      <div class="form-subheading">Assunto & Extensões</div>
+      <div class="grid">
+        <div id="w_assunto" class="field-col full">
+          <label for="assunto">
+            Assunto <small>(minúsculas, 2 a 5 palavras; artigos e preposições são suprimidos)</small>
+          </label>
+          <input type="text" id="assunto" placeholder="ex.: solicitacao material escola">
+        </div>
+        <div class="field-col full">
+          <label>Extensões desejadas <small>(marque as extensões que deseja gerar)</small></label>
+          <div class="chips" id="exts"></div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <!-- COLUNA 2: RESULTADOS, VALIDAÇÃO DA NORMA E SESSÃO -->
+  <div class="column-output">
+    <section class="card output-card sticky-card">
+      <div class="card-header">
+        <h2>Resultado Gerado</h2>
+        <span class="badge-status" id="badge_status">Ao vivo</span>
+      </div>
+
+      <div class="pattern-box">
+        <span class="pattern-label">Estrutura do Padrão:</span>
+        <div class="pattern" id="padrao">Aguardando dados...</div>
+      </div>
+
+      <!-- CONTADOR DE CARACTERES (MÁX 80) -->
+      <div class="char-counter-bar">
+        <div class="char-info">
+          <span>Tamanho: <b id="char_count">0</b> / 80 caracteres</span>
+          <span id="char_status_badge" class="badge-char ok">Válido</span>
+        </div>
+        <div class="char-progress-track">
+          <div id="char_progress_bar" class="char-progress-fill" style="width: 0%;"></div>
+        </div>
+      </div>
+
+      <div id="avisos" class="alert-container"></div>
+      
+      <div class="output-list-wrapper">
+        <div id="saidas" class="saidas-container"></div>
+      </div>
+
+      <button type="button" class="btn-primary" id="addLista">
+        ➕ Adicionar à lista
+      </button>
+    </section>
+
+    <section class="card list-card">
+      <div class="card-header">
+        <h2>Lista da Sessão</h2>
+      </div>
+      <div id="lista" class="session-list">
+        <p class="empty">Nenhum nome adicionado ainda nesta sessão.</p>
+      </div>
+      <div class="list-actions">
+        <button type="button" class="btn-secondary" id="copiarTudo">📋 Copiar todos</button>
+        <button type="button" class="btn-secondary" id="baixarCsv">📥 Baixar CSV</button>
+        <button type="button" class="btn-danger" id="limparLista">🗑️ Esvaziar</button>
+      </div>
+    </section>
+  </div>
+</main>
+
+<footer class="app-footer">
+  <div class="footer-container">
+    <p><strong>Norma de Nomenclatura SEINFRA (12/11/2026):</strong> Hífen como único separador · Códigos em MAIÚSCULAS · Assunto em minúsculas (2 a 5 palavras) · Máx. 80 caracteres · Sem dados pessoais (LGPD) · Mudanças de conteúdo registradas no campo de revisão.</p>
+  </div>
+</footer>
+
+<!-- SCRIPT PARA CONTROLE DE TEMA (DARK / LIGHT MODE) -->
+<script>
+  (function() {
+    const html = document.documentElement;
+    const toggleBtn = document.getElementById('themeToggle');
+    const themeIcon = document.getElementById('themeIcon');
+    const themeText = document.getElementById('themeText');
+
+    function applyTheme(theme) {
+      html.setAttribute('data-theme', theme);
+      localStorage.setItem('seinfra_theme', theme);
+      if (theme === 'dark') {
+        themeIcon.textContent = '☀️';
+        themeText.textContent = 'Modo Claro';
+      } else {
+        themeIcon.textContent = '🌙';
+        themeText.textContent = 'Modo Escuro';
+      }
+    }
+
+    const savedTheme = localStorage.getItem('seinfra_theme');
+    const systemPrefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    const initialTheme = savedTheme || (systemPrefersDark ? 'dark' : 'light');
+    applyTheme(initialTheme);
+
+    toggleBtn.addEventListener('click', function() {
+      const currentTheme = html.getAttribute('data-theme') || 'light';
+      applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
+    });
+  })();
+</script>
+
+<script src="gerador-nomes-arquivos.js"></script>
+</body>
+</html>
